@@ -1,0 +1,87 @@
+//Practice SVA set 2
+
+//Write an assertion check to make sure that a signal is high for a minimum of 2 cycles and a maximum of 6 cycles.
+property p1 ;
+  @(posedge clk) disable_iff(rst)
+  $rose(a) |-> ##2 a[*2:6];
+endproperty
+
+//Write an assertion for glitch detection.
+ realtime duration = 30ns;
+property p2;
+  realtime first_change;
+  @(posedge clk) disable_iff(rst)
+  ((1,first_change) = $realtime) |=> ($realtime - first_change) >= duration ;
+  // ($isunknown(a) && !$isunknown($past(a))) |=> $error("Glitch detected!");
+endproperty
+
+//If there's an uncorrectable err during an ADD request, err_cnt should be incremented in the same cycle and an interrupt should be flagged in the next cycle.
+property p3;
+int err_cnt =0;
+  @(posedge clk) disable_iff(rst)
+  $rose(add_req) && err |-> err_cnt++ ##1 interr_flg
+endproperty
+
+//Write an assertion: everytime when the valid signal goes high, the count is incremented.
+property p4;
+@(posedge clk)
+disable_iff(!reset)
+valid && !$past(valid) |=> count == count + 1;
+endproperty
+
+//If the state machine reaches STATE=active1, it will eventually reach STATE=active2.
+property p5;
+@(posedge clk)
+disable_iff(!reset)
+  STATE==active1 |-> ##[*1:$] STATE==active2;
+endproperty
+
+
+//When there's a no_space_err, the no_space_ctr_incr signal is flagged for exactly once clock.
+property p6;
+@(posedge clk)
+disable_iff(!reset)
+  no_space_err |=> ##1 no_space_ctr_incr;
+endproperty
+
+//If signal_a is active, then signal_b was active 3 cycles ago.
+property p7;
+@(posedge clk)
+disable_iff(!reset)
+  signal_a && $past(signal_b,3);   //$past(signal , clk_cycle);
+endproperty
+
+//For a synchronous FIFO of depth = 16, write an assertion for the following scenarios.
+//Assume a clock signal(clk), write and read enable signals, full flag and a word counter signal.
+//a) If the word count is >15, FIFO full flag set.
+//b) If the word count is 15 and a new write operation happens without a simultaneous read, then the FIFO full flag is set.
+property p8;
+  int wr_cnt;
+@(posedge clk)
+disable_iff(!reset)
+wr_cnt > 15 |=> full ;
+endproperty
+
+property p9;
+  int wr_cnt;
+@(posedge clk)
+disable_iff(!reset)
+  (wr_cnt == 15) && (wr_en) && (!rd_en) |=> full ;
+endproperty
+
+//Write an assertion checker to make sure that an output signal never goes X
+property p10;
+@(posedge clk)
+disable_iff(!reset)
+  !($isunknown(A));
+endproperty
+
+
+
+
+
+
+
+  
+  
+  
