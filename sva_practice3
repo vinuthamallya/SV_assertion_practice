@@ -1,0 +1,64 @@
+//Practice set 3
+
+//1.Write an assertion to make sure that a 5-bit grant signal only has one bit set at any time
+property p1;
+  bit [4:0] grant;
+  @(posedge clk) disable_iff(reset)
+  $onehot(grant);
+endproperty
+
+//2. Write an assertion which checks that once a valid request is asserted by the master, the arbiter provides a grant within 2 to 5 clock cycles.
+property p2;
+  @(posedge clk) disable_iff(reset)
+  $rose(valid) |-> ##[2:5] grant ;
+endproperty
+
+//3.How can you disable an assertion during active reset time?
+By using disable_iff(reset);
+
+//4.How can all assertion be turned off during simulation (with active assertions)?
+By using $assertoff and $asserton , to kill $assertkill 
+Syntax - $assertoff( 0 , < module_instance_name > , <name_of_assertion> );
+
+//5.In a RESP operation, request must be true immediately, grant must be true 3 clock cycles later, followed by request being false, and then grant being false.
+property p3;
+  @(posedge clk) disable_iff(reset)
+  req && ##3 grant && (!req) && ##1 (!grant);
+endproperty
+
+//6. The signals signal_a and signal_b may only be asserted if signal_c is asserted.
+property p3;
+  @(posedge clk) disable_iff(reset)
+  signal_c |=> signal_a && signal_b;
+endproperty
+
+//7. Request must true at the current cycle; grant must become true sometime between 1 cycle after request and the end of time.
+property p3;
+  @(posedge clk) disable_iff(reset)
+  $rose(req) |-> ## [ 1:$] grant ;
+endproperty
+
+
+//8. Write an assertion: A high for 5 cycles and B high after 4 continuous highs of A and finally both A and B are high?
+property p3;
+  @(posedge clk) disable_iff(reset)
+  A[*5] && (A |=> ##4  B ) && (A&&B);
+endproperty
+
+
+//9. Write an assertion to verify the clock with 50% duty cycle of any given time period.
+property time_period(int clk_period);
+time current_time;
+@(posedge clock)
+// Check: If this condition holds... // Implication: Then this condition
+must also hold
+(`1, current_time = $time) |=> (clk_period/2 == $time - current_time);
+endproperty
+
+
+//10. When signal "d" changes to 1, on next cycle, if signal "b" is true, then signal "c" should be high continuously or intermittently for 2 clock cycles, followed by high on signal "a" in thenext cycle else the signal "a" should be high continuously or intermittently for 2 clock cycles, followed by high on signal "c" in the next cycle.
+property p10;
+  @(posedge clk) disable_iff(reset)
+  $rose(d) |=> if(b) ((c[=2] ##1 a );) else ( a[=2] ##1 c ) ;
+endproperty 
+  
